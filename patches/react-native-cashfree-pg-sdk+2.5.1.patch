@@ -1,0 +1,30 @@
+diff --git a/node_modules/react-native-cashfree-pg-sdk/android/src/main/java/com/reactnativecashfreepgsdk/CashfreePgApiModule.java b/node_modules/react-native-cashfree-pg-sdk/android/src/main/java/com/reactnativecashfreepgsdk/CashfreePgApiModule.java
+--- a/node_modules/react-native-cashfree-pg-sdk/android/src/main/java/com/reactnativecashfreepgsdk/CashfreePgApiModule.java
++++ b/node_modules/react-native-cashfree-pg-sdk/android/src/main/java/com/reactnativecashfreepgsdk/CashfreePgApiModule.java
+@@ -71,6 +71,5 @@ public class CashfreePgApiModule extends ReactContextBaseJavaModule implements C
+   @ReactMethod
+   public void doPayment(String cfPaymentString) {
+-    Log.d("CashfreePgApiModule", cfPaymentString);
+     try {
+       Activity activity = getCurrentActivity();
+       CFDropCheckoutPayment cfDropCheckoutPayment = DropPaymentParser.getDropCheckoutPayment(cfPaymentString);
+@@ -89,4 +88,3 @@
+   @ReactMethod
+   public void doUPIPayment(String cfPaymentString) {
+-    Log.d("CashfreePgApiModule", cfPaymentString);
+     try {
+@@ -107,4 +105,3 @@
+   @ReactMethod
+   public void doWebPayment(String sessionString) {
+-    Log.d("CashfreePgApiModule Web", sessionString);
+     CFSession cfSession = null;
+@@ -246,4 +243,3 @@
+   @ReactMethod
+   public void doElementUPIPayment(String upiPaymentData) {
+-    Log.d("CashfreePgApiModule", upiPaymentData);
+     CFSession cfSession = null;
+@@ -288,4 +284,3 @@
+   @ReactMethod
+   public void doElementNBPayment(String nbPaymentData) {
+-    Log.d("CashfreePgApiModule", nbPaymentData);
+     CFSession cfSession = null;

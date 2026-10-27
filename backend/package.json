@@ -1,0 +1,26 @@
+{
+  "name": "cashfreedemo-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "check": "node --check src/server.js && node --check src/app.js && node --check src/paymentService.js",
+    "test": "node --test src/test/*.test.js"
+  },
+  "dependencies": {
+    "cashfree-pg": "6.0.6",
+    "dotenv": "17.2.3",
+    "express": "5.1.0",
+    "express-rate-limit": "8.7.1",
+    "helmet": "8.1.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "supertest": "7.1.4"
+  }
+}
