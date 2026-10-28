@@ -1,4 +1,14 @@
+import axios from 'axios';
 import { API_BASE_URL, REQUEST_TIMEOUT_MS } from '../../config/environment';
+
+const paymentApi = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: REQUEST_TIMEOUT_MS,
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  },
+});
 
 export class ApiError extends Error {
   constructor(message, status) {
@@ -9,28 +19,17 @@ export class ApiError extends Error {
 }
 
 async function request(path, options = {}) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const method = options.method || 'GET';
+  const requestPayload = options.data;
 
   try {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+    const response = await paymentApi.request({
+      url: path,
+      method,
+      data: requestPayload,
     });
-    const body = await response.json().catch(() => null);
-    if (!response.ok) {
-      throw new ApiError(
-        typeof body?.error === 'string'
-          ? body.error
-          : 'The backend could not complete the request.',
-        response.status,
-      );
-    }
+    console.log(`GetMethod:${response}`);
+    const body = response.data;
     if (!body || typeof body !== 'object') {
       throw new ApiError('The backend returned an invalid response.');
     }
@@ -39,7 +38,19 @@ async function request(path, options = {}) {
     if (error instanceof ApiError) {
       throw error;
     }
-    if (error?.name === 'AbortError') {
+    if (axios.isAxiosError(error) && error.response) {
+      const body = error.response.data;
+      throw new ApiError(
+        typeof body?.error === 'string'
+          ? body.error
+          : 'The backend could not complete the request.',
+        error.response.status,
+      );
+    }
+    if (
+      axios.isAxiosError(error) &&
+      ['ECONNABORTED', 'ETIMEDOUT'].includes(error.code)
+    ) {
       throw new ApiError(
         'The request timed out. Check the backend connection and try again.',
       );
@@ -47,8 +58,6 @@ async function request(path, options = {}) {
     throw new ApiError(
       'Could not reach the backend. Check the server and network connection.',
     );
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
@@ -67,7 +76,7 @@ export async function checkBackend() {
 export async function createOrder(customer) {
   const body = await request('/api/payments/orders', {
     method: 'POST',
-    body: JSON.stringify(customer),
+    data: customer,
   });
   if (
     typeof body.orderId !== 'string' ||

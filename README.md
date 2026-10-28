@@ -46,7 +46,7 @@ npm ci
 npm ci --prefix backend
 ```
 
-The checked-in root and backend lockfiles pin the JavaScript dependencies. Before building, `patch-package` applies the checked-in Cashfree SDK patch that removes its native debug log of the payment session payload.
+The checked-in root and backend lockfiles pin the JavaScript dependencies. Before building, `patch-package` applies the checked-in Cashfree SDK patch, which removes SDK console output that could expose payment data or clutter debugging.
 
 ## Backend setup
 

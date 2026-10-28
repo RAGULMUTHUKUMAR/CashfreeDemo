@@ -25,7 +25,16 @@ class MockCashfree {
 
   async fetchOrder(orderId) {
     if (this.failVerify) {
-      throw new Error('Cashfree unavailable');
+      const error = new Error('Cashfree unavailable');
+      error.response = {
+        status: 401,
+        data: {
+          code: 'authentication_failed',
+          message:
+            'Cashfree rejected the configured credentials cfsk_test_secret',
+        },
+      };
+      throw error;
     }
     return { order_id: orderId, order_status: 'ACTIVE' };
   }
@@ -178,6 +187,21 @@ describe('payment API', () => {
       `/api/payments/orders/${created.body.orderId}`,
     );
     assert.equal(response.body.order.status, 'UNVERIFIABLE');
+  });
+
+  it('returns a safe error when Cashfree order verification fails', async () => {
+    const { app, gateway } = setup();
+    const created = await request(app).post('/api/payments/orders').send(input);
+    gateway.failVerify = true;
+    const response = await request(app).get(
+      `/api/payments/orders/${created.body.orderId}`,
+    );
+
+    assert.equal(response.status, 502);
+    assert.equal(
+      response.body.error,
+      'The payment service is temporarily unavailable.',
+    );
   });
 
   it('rejects malformed and unknown order IDs', async () => {

@@ -13,12 +13,4 @@ const paymentService = new PaymentService(
 );
 const app = createApp(paymentService, config);
 
-app.listen(config.port, '0.0.0.0', () => {
-  const credentialsConfigured =
-    config.cashfreeClientId && config.cashfreeClientSecret;
-  console.log(
-    `CashfreeDemo backend listening on port ${config.port} (${
-      config.cashfreeEnvironment
-    }); credentials ${credentialsConfigured ? 'configured' : 'missing'}.`,
-  );
-});
+app.listen(config.port, '0.0.0.0');

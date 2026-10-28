@@ -28,3 +28,187 @@ diff --git a/node_modules/react-native-cashfree-pg-sdk/android/src/main/java/com
    public void doElementNBPayment(String nbPaymentData) {
 -    Log.d("CashfreePgApiModule", nbPaymentData);
      CFSession cfSession = null;
+diff --git a/node_modules/react-native-cashfree-pg-sdk/src/Card/CFCardComponent.js b/node_modules/react-native-cashfree-pg-sdk/src/Card/CFCardComponent.js
+--- a/node_modules/react-native-cashfree-pg-sdk/src/Card/CFCardComponent.js
++++ b/node_modules/react-native-cashfree-pg-sdk/src/Card/CFCardComponent.js
+@@ -191,6 +191,6 @@
+             CFPaymentGatewayService.makePayment(cardPayment);
+         }
+         catch (e) {
+-            console.log(e.message);
++            throw e;
+         }
+     };
+@@ -200,6 +200,6 @@
+             doPayment(cardInfo);
+         }
+         catch (e) {
+-            console.log(e.message);
++            throw e;
+         }
+     };
+diff --git a/node_modules/react-native-cashfree-pg-sdk/src/Card/CFCardComponent.tsx b/node_modules/react-native-cashfree-pg-sdk/src/Card/CFCardComponent.tsx
+--- a/node_modules/react-native-cashfree-pg-sdk/src/Card/CFCardComponent.tsx
++++ b/node_modules/react-native-cashfree-pg-sdk/src/Card/CFCardComponent.tsx
+@@ -244,5 +244,5 @@
+         const cardPayment = new CFCardPayment(sessionRef.current, cardInfo);
+         CFPaymentGatewayService.makePayment(cardPayment);
+       } catch (e: any) {
+-        console.log(e.message);
++        throw e;
+       }
+@@ -256,5 +256,5 @@
+         sessionRef.current = session;
+         doPayment(cardInfo);
+       } catch (e: any) {
+-        console.log(e.message);
++        throw e;
+       }
+diff --git a/node_modules/react-native-cashfree-pg-sdk/src/Card/CFSubsCardComponent.js b/node_modules/react-native-cashfree-pg-sdk/src/Card/CFSubsCardComponent.js
+--- a/node_modules/react-native-cashfree-pg-sdk/src/Card/CFSubsCardComponent.js
++++ b/node_modules/react-native-cashfree-pg-sdk/src/Card/CFSubsCardComponent.js
+@@ -156,5 +156,5 @@
+             CFPaymentGatewayService.makeSubsPayment(cardPayment);
+         }
+         catch (e) {
+-            console.log(e.message);
++            throw e;
+         }
+@@ -165,5 +165,5 @@
+             doSubscriptionPayment(cardInfo);
+         }
+         catch (e) {
+-            console.log(e.message);
++            throw e;
+         }
+diff --git a/node_modules/react-native-cashfree-pg-sdk/src/Card/CFSubsCardComponent.tsx b/node_modules/react-native-cashfree-pg-sdk/src/Card/CFSubsCardComponent.tsx
+--- a/node_modules/react-native-cashfree-pg-sdk/src/Card/CFSubsCardComponent.tsx
++++ b/node_modules/react-native-cashfree-pg-sdk/src/Card/CFSubsCardComponent.tsx
+@@ -215,5 +215,5 @@
+         const cardPayment = new CFSubsCardPayment(sessionRef.current, cardInfo);
+         CFPaymentGatewayService.makeSubsPayment(cardPayment);
+       } catch (e: any) {
+-        console.log(e.message);
++        throw e;
+       }
+@@ -227,5 +227,5 @@
+         sessionRef.current = session;
+         doSubscriptionPayment(cardInfo);
+       } catch (e: any) {
+-        console.log(e.message);
++        throw e;
+       }
+diff --git a/node_modules/react-native-cashfree-pg-sdk/src/CFErrorResponse.js b/node_modules/react-native-cashfree-pg-sdk/src/CFErrorResponse.js
+--- a/node_modules/react-native-cashfree-pg-sdk/src/CFErrorResponse.js
++++ b/node_modules/react-native-cashfree-pg-sdk/src/CFErrorResponse.js
+@@ -12,9 +12,7 @@
+             this.type = fields.type;
+     }
+     fromJSON(errorString) {
+-        console.log('errorString :' + errorString);
+         const object = JSON.parse(errorString);
+-        console.log('errorStringObject :' + object);
+         this.status = object.status;
+         this.message = object.message;
+         this.code = object.code;
+diff --git a/node_modules/react-native-cashfree-pg-sdk/src/CFErrorResponse.ts b/node_modules/react-native-cashfree-pg-sdk/src/CFErrorResponse.ts
+--- a/node_modules/react-native-cashfree-pg-sdk/src/CFErrorResponse.ts
++++ b/node_modules/react-native-cashfree-pg-sdk/src/CFErrorResponse.ts
+@@ -11,9 +11,7 @@
+   }
+ 
+   fromJSON(errorString: string) {
+-    console.log('errorString :' + errorString);
+     const object = JSON.parse(errorString);
+-    console.log('errorStringObject :' + object);
+     this.status = object.status;
+     this.message = object.message;
+     this.code = object.code;
+diff --git a/node_modules/react-native-cashfree-pg-sdk/src/index.js b/node_modules/react-native-cashfree-pg-sdk/src/index.js
+--- a/node_modules/react-native-cashfree-pg-sdk/src/index.js
++++ b/node_modules/react-native-cashfree-pg-sdk/src/index.js
+@@ -52,7 +52,6 @@
+         return new Promise((resolve, reject) => {
+             if (Platform.OS === 'ios') {
+                 let fetchUpiList = (apps) => {
+-                    console.log(JSON.stringify(apps));
+                     if (apps) {
+                         resolve(apps);
+                     }
+@@ -88,5 +87,5 @@
+             CashfreePgApi.doElementNBPayment(paymentData);
+         }
+         else {
+-            console.log('makePayment::==> Wrong payment object');
++            throw new Error('Unsupported payment object.');
+         }
+@@ -104,5 +103,5 @@
+             CashfreePgApi.doSubsNBPayment(paymentData);
+         }
+         else {
+-            console.log('makePayment::==> Wrong payment object');
++            throw new Error('Unsupported subscription payment object.');
+         }
+@@ -116,7 +115,6 @@
+     }
+     setEventSubscriber(cfEventCallback) {
+         let eventFunction = (event) => {
+-            console.log(JSON.stringify(event));
+             let data = JSON.parse(event);
+             cfEventCallback.onReceivedEvent(data.eventName, data.meta);
+         };
+@@ -134,10 +132,8 @@
+         // this.cfCallback = cfCallback;
+         let successFunction = (orderID) => {
+-            console.log('response is : ' + JSON.stringify(orderID));
+             cfCallback.onVerify(orderID);
+         };
+         let failureFunction = (error) => {
+-            console.log('reason: ' + JSON.stringify(error));
+             const response = new CFErrorResponse();
+             // @ts-ignore
+             const message = JSON.parse(error);
+diff --git a/node_modules/react-native-cashfree-pg-sdk/src/index.ts b/node_modules/react-native-cashfree-pg-sdk/src/index.ts
+--- a/node_modules/react-native-cashfree-pg-sdk/src/index.ts
++++ b/node_modules/react-native-cashfree-pg-sdk/src/index.ts
+@@ -83,7 +83,6 @@
+     return new Promise((resolve, reject) => {
+       if (Platform.OS === 'ios') {
+         let fetchUpiList = (apps: string) => {
+-          console.log(JSON.stringify(apps));
+           if (apps) {
+             resolve(apps);
+           } else {
+@@ -117,5 +116,5 @@
+     } else if (cfPayment instanceof CFNBPayment) {
+       CashfreePgApi.doElementNBPayment(paymentData);
+     } else {
+-      console.log('makePayment::==> Wrong payment object');
++      throw new Error('Unsupported payment object.');
+     }
+@@ -131,5 +130,5 @@
+     } else if (cfPayment instanceof CFSubsNBPayment) {
+       CashfreePgApi.doSubsNBPayment(paymentData);
+     } else {
+-      console.log('makePayment::==> Wrong payment object');
++      throw new Error('Unsupported subscription payment object.');
+     }
+@@ -145,7 +144,6 @@
+ 
+   setEventSubscriber(cfEventCallback: CFEventCallback) {
+     let eventFunction = (event: string) => {
+-      console.log(JSON.stringify(event));
+       let data = JSON.parse(event);
+       cfEventCallback.onReceivedEvent(data.eventName, data.meta);
+     };
+@@ -167,10 +165,8 @@
+     // this.cfCallback = cfCallback;
+     let successFunction = (orderID: string) => {
+-      console.log('response is : ' + JSON.stringify(orderID));
+       cfCallback.onVerify(orderID);
+     };
+     let failureFunction = (error: string) => {
+-      console.log('reason: ' + JSON.stringify(error));
+       const response = new CFErrorResponse();
+       // @ts-ignore
+       const message = JSON.parse(error);

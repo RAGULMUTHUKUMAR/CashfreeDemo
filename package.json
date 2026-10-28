@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.88.0",
+    "axios": "^1.21.0",
     "cashfree-pg-api-contract": "2.2.0",
     "react": "19.3.0",
     "react-native": "0.88.0",
