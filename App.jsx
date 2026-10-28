@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
 import HomeScreen from './src/features/payments/screens/HomeScreen';
 import PaymentFormScreen from './src/features/payments/screens/PaymentFormScreen';
 import PaymentHistoryScreen from './src/features/payments/screens/PaymentHistoryScreen';
@@ -29,6 +31,7 @@ export default function App() {
   const activeAttempt = useRef(null);
   const verificationInProgress = useRef(false);
   const submissionInProgress = useRef(false);
+  const pendingOrderRequest = useRef(null);
   const refreshBackendRef = useRef(null);
   const verifyCurrentOrderRef = useRef(null);
 
@@ -125,7 +128,18 @@ export default function App() {
     setSubmitting(true);
     setFormError('');
     try {
-      const created = await createOrder(customer);
+      const requestPayload = JSON.stringify(customer);
+      if (pendingOrderRequest.current?.payload !== requestPayload) {
+        pendingOrderRequest.current = {
+          payload: requestPayload,
+          idempotencyKey: uuidv4(),
+        };
+      }
+      const created = await createOrder(
+        customer,
+        pendingOrderRequest.current.idempotencyKey,
+      );
+      pendingOrderRequest.current = null;
       const newAttempt = {
         orderId: created.orderId,
         amount: created.amount,

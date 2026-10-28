@@ -63,10 +63,16 @@ Set these backend-only values in `backend/.env`:
 | `PORT` | HTTP port | `4000` |
 | `DATABASE_PATH` | SQLite database file | `./data/payments.sqlite` |
 | `CASHFREE_ENV` | `SANDBOX` or `PRODUCTION` | `SANDBOX` |
+| `CASHFREE_API_VERSION` | Cashfree API version | `2026-01-01` |
+| `CASHFREE_RETURN_URL` | Optional redirect URL template; `{order_id}` is replaced with the generated order ID | unset |
 | `CASHFREE_CLIENT_ID` | Cashfree client ID | unset |
 | `CASHFREE_CLIENT_SECRET` | Cashfree client secret | unset |
 
 Missing credentials are reported by `/health`, and order creation returns a clear configuration error. Production mode is never selected unless `CASHFREE_ENV=PRODUCTION` is explicitly set.
+
+The mobile app sends a UUID in the `Idempotency-Key` header when creating an order. The backend reserves that key, sends it to Cashfree, and reuses the same generated order ID/session for retries with the same validated request. Reusing the key with different customer or amount fields returns HTTP 409.
+
+This demo has no authenticated user or trusted product-pricing source. Its amount is entered by the customer and checked against server-side format/range rules; connect order creation to the authenticated user and server-side tariff/order data before production billing. The current flow verifies payment status with Cashfree from the backend after SDK callbacks or manual retry. Production fulfillment should additionally configure Cashfree webhooks using its webhook secret and the current documented event schema.
 
 Start the backend from the repository root:
 

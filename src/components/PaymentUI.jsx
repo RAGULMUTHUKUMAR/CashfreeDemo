@@ -100,7 +100,10 @@ export function StatusBadge({ status, label }) {
       ? 'green'
       : status === 'FAILED' || status === 'UNVERIFIABLE' || status === 'offline'
       ? 'red'
-      : status === 'VERIFYING' || status === 'PENDING' || status === 'checking'
+      : status === 'VERIFYING' ||
+        status === 'PENDING' ||
+        status === 'EXPIRED' ||
+        status === 'checking'
       ? 'amber'
       : 'neutral';
   return (

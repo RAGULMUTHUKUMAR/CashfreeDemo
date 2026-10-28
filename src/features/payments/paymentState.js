@@ -24,6 +24,11 @@ const PAYMENT_PRESENTATIONS = {
     detail: 'Cashfree reports that checkout was cancelled.',
     tone: 'neutral',
   },
+  EXPIRED: {
+    title: 'Payment expired',
+    detail: 'Cashfree reports that this order has expired.',
+    tone: 'amber',
+  },
   UNVERIFIABLE: {
     title: 'Unable to verify payment',
     detail:

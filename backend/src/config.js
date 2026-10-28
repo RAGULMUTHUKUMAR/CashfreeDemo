@@ -12,11 +12,18 @@ function readConfig(environment = process.env) {
   }
 
   const databasePath = environment.DATABASE_PATH || './data/payments.sqlite';
+  const cashfreeApiVersion = environment.CASHFREE_API_VERSION || '2026-01-01';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(cashfreeApiVersion)) {
+    throw new Error('CASHFREE_API_VERSION must use YYYY-MM-DD format.');
+  }
+
   return {
     port,
     databasePath:
       databasePath === ':memory:' ? databasePath : path.resolve(databasePath),
     cashfreeEnvironment,
+    cashfreeApiVersion,
+    cashfreeReturnUrl: environment.CASHFREE_RETURN_URL || undefined,
     cashfreeClientId: environment.CASHFREE_CLIENT_ID,
     cashfreeClientSecret: environment.CASHFREE_CLIENT_SECRET,
   };

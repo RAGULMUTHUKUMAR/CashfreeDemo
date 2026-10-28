@@ -16,6 +16,8 @@ jest.mock('../src/features/payments/paymentApi', () => ({
   verifyOrder: jest.fn(),
 }));
 
+jest.mock('uuid', () => ({ v4: () => '56bb45db-a04c-4bc7-baa3-834a7ae18807' }));
+
 jest.mock('../src/features/payments/cashfreeCheckout', () => ({
   launchCheckout: jest.fn(),
   registerCheckoutCallbacks: jest.fn(),

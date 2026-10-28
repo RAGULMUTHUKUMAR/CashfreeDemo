@@ -17,6 +17,7 @@ const createOrderSchema = z
   .strict();
 
 const orderIdSchema = z.string().regex(/^cf_demo_[a-f0-9]{32}$/);
+const idempotencyKeySchema = z.string().uuid();
 
 function normalizeIndianPhone(phone) {
   const digits = phone.replace(/\D/g, '');
@@ -29,4 +30,9 @@ function normalizeIndianPhone(phone) {
   return digits;
 }
 
-module.exports = { createOrderSchema, orderIdSchema, normalizeIndianPhone };
+module.exports = {
+  createOrderSchema,
+  orderIdSchema,
+  idempotencyKeySchema,
+  normalizeIndianPhone,
+};
