@@ -10,6 +10,25 @@ const paymentApi = axios.create({
   },
 });
 
+const cashfreeOrderFields = [
+  'cf_order_id',
+  'created_at',
+  'customer_details',
+  'entity',
+  'order_amount',
+  'payment_session_id',
+  'order_currency',
+  'order_expiry_time',
+  'order_id',
+  'order_meta',
+  'order_note',
+  'order_splits',
+  'order_status',
+  'order_tags',
+  'terminal_data',
+  'cart_details',
+];
+
 export class ApiError extends Error {
   constructor(message, status) {
     super(message);
@@ -123,17 +142,39 @@ export async function createOrder(customer, idempotencyKey) {
     data: customer,
     headers: { 'Idempotency-Key': idempotencyKey },
   });
+  const orderId = body.orderId || body.order_id;
+  const paymentSessionId = body.paymentSessionId || body.payment_session_id;
+  const amount = body.amount ?? body.order_amount;
+  const createdAt = body.createdAt || body.created_at;
+  const status = body.status || 'PENDING';
   if (
-    typeof body.orderId !== 'string' ||
-    typeof body.paymentSessionId !== 'string' ||
-    body.paymentSessionId.length === 0 ||
-    typeof body.amount !== 'number' ||
-    typeof body.createdAt !== 'string' ||
-    body.status !== 'PENDING'
+    typeof orderId !== 'string' ||
+    typeof paymentSessionId !== 'string' ||
+    paymentSessionId.length === 0 ||
+    typeof amount !== 'number' ||
+    typeof createdAt !== 'string' ||
+    status !== 'PENDING' ||
+    (body.order_id != null && body.order_id !== orderId) ||
+    (body.payment_session_id != null &&
+      body.payment_session_id !== paymentSessionId) ||
+    (body.order_amount != null && body.order_amount !== amount)
   ) {
     throw new ApiError('The backend returned an incomplete payment session.');
   }
-  return body;
+  const cashfreeResponse = Object.fromEntries(
+    cashfreeOrderFields
+      .filter(field => Object.prototype.hasOwnProperty.call(body, field))
+      .map(field => [field, body[field]]),
+  );
+  return {
+    ...body,
+    orderId,
+    paymentSessionId,
+    amount,
+    createdAt,
+    status,
+    cashfreeResponse,
+  };
 }
 
 export async function verifyOrder(orderId) {

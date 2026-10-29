@@ -82,6 +82,8 @@ export default function App() {
       const verified = await verifyOrder(orderId);
       updateAttempt({
         ...verified,
+        cashfreeResponse: activeAttempt.current?.cashfreeResponse,
+        customerDetails: activeAttempt.current?.customerDetails,
         callbackResult: callbackResult || activeAttempt.current?.callbackResult,
       });
       setOrders(current => {
@@ -145,6 +147,12 @@ export default function App() {
         amount: created.amount,
         createdAt: created.createdAt,
         status: 'VERIFYING',
+        cashfreeResponse: created.cashfreeResponse,
+        customerDetails: {
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+        },
         callbackResult: null,
       };
       updateAttempt(newAttempt);

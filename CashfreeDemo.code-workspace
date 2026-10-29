@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../../Platform-as/platform-docker"
+		},
+		{
+			"path": "../../../Platform-as/platform"
+		},
+		{
+			"path": "../../../Platform-as/platform-api"
+		},
+		{
+			"path": "../../../Platform-as/platform-payments"
+		}
+	],
+	"settings": {
+		"java.compile.nullAnalysis.mode": "automatic"
+	}
+}

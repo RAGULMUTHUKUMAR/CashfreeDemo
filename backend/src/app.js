@@ -36,8 +36,7 @@ function logPaymentError(operation, error, config) {
   const details = {
     name: error?.name || 'Error',
     status: error?.response?.status ?? error?.statusCode,
-    code:
-      providerError?.code ?? providerError?.error_code ?? error?.code,
+    code: providerError?.code ?? providerError?.error_code ?? error?.code,
     providerMessage: safeProviderMessage(
       providerError?.message ?? providerError?.message_description,
       config,
@@ -84,7 +83,9 @@ function createApp(paymentService, config) {
       request.get('Idempotency-Key'),
     );
     if (!idempotencyKey.success) {
-      response.status(400).json({ error: 'A valid Idempotency-Key is required.' });
+      response
+        .status(400)
+        .json({ error: 'A valid Idempotency-Key is required.' });
       return;
     }
 
@@ -102,6 +103,7 @@ function createApp(paymentService, config) {
         idempotencyKey.data,
       );
       response.status(201).json({
+        ...result.cashfreeResponse,
         orderId: result.order.orderId,
         amount: result.order.amount,
         status: result.order.status,
@@ -178,19 +180,27 @@ function createApp(paymentService, config) {
     if (upstreamStatus === 401 || upstreamStatus === 403) {
       response
         .status(503)
-        .json({ error: 'Cashfree credentials were rejected by the payment provider.' });
+        .json({
+          error: 'Cashfree credentials were rejected by the payment provider.',
+        });
       return;
     }
     if (upstreamStatus === 400) {
-      response.status(502).json({ error: 'Cashfree rejected the order request.' });
+      response
+        .status(502)
+        .json({ error: 'Cashfree rejected the order request.' });
       return;
     }
     if (upstreamStatus === 409) {
-      response.status(409).json({ error: 'Cashfree rejected this order request.' });
+      response
+        .status(409)
+        .json({ error: 'Cashfree rejected this order request.' });
       return;
     }
     if (upstreamStatus === 429) {
-      response.status(503).json({ error: 'Cashfree is temporarily rate limiting requests.' });
+      response
+        .status(503)
+        .json({ error: 'Cashfree is temporarily rate limiting requests.' });
       return;
     }
     if (['ECONNABORTED', 'ETIMEDOUT'].includes(error?.code)) {

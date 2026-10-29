@@ -18,6 +18,15 @@ export default function PaymentResultScreen({
   onHome,
 }) {
   const presentation = getPaymentPresentation(attempt?.status);
+  const cashfreeResponse = attempt?.cashfreeResponse;
+  const responseForDisplay = cashfreeResponse
+    ? {
+        ...cashfreeResponse,
+        ...(cashfreeResponse.payment_session_id
+          ? { payment_session_id: '[REDACTED: used by checkout]' }
+          : {}),
+      }
+    : undefined;
 
   return (
     <ScreenFrame>
@@ -39,12 +48,32 @@ export default function PaymentResultScreen({
         <Text style={styles.label}>AMOUNT</Text>
         <Text style={styles.amount}>{formatRupees(attempt?.amount)}</Text>
         <View style={styles.divider} />
+        <Text style={styles.label}>CUSTOMER</Text>
+        <Text style={styles.value}>
+          {attempt?.customerDetails?.name || 'Unavailable'}
+        </Text>
+        <Text style={styles.contact}>
+          {attempt?.customerDetails?.email || 'Email unavailable'}
+        </Text>
+        <Text style={styles.contact}>
+          {attempt?.customerDetails?.phone || 'Phone unavailable'}
+        </Text>
+        <View style={styles.divider} />
         <Text style={styles.label}>ORDER ID</Text>
         <Text selectable style={styles.orderId}>
           {attempt?.orderId || 'Unavailable'}
         </Text>
         <Text style={styles.date}>{formatDate(attempt?.createdAt)}</Text>
       </View>
+
+      {responseForDisplay ? (
+        <View style={styles.responseBlock}>
+          <Text style={styles.callbackTitle}>Cashfree order response</Text>
+          <Text selectable style={styles.responseJson}>
+            {JSON.stringify(responseForDisplay, null, 2)}
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.callbackNote}>
         <Text style={styles.callbackTitle}>Checkout callback</Text>
@@ -101,6 +130,22 @@ const styles = StyleSheet.create({
   },
   label: { color: colors.muted, fontSize: 10, fontWeight: '800' },
   amount: { color: colors.ink, fontSize: 25, fontWeight: '900', marginTop: 6 },
+  value: { color: colors.ink, fontSize: 14, fontWeight: '700', marginTop: 7 },
+  contact: { color: colors.muted, fontSize: 13, marginTop: 4 },
+  responseBlock: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 5,
+    padding: 14,
+    marginTop: 16,
+  },
+  responseJson: {
+    color: colors.ink,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 9,
+  },
   divider: { height: 1, backgroundColor: colors.line, marginVertical: 16 },
   orderId: { color: colors.ink, fontSize: 13, marginTop: 7 },
   date: { color: colors.muted, fontSize: 12, marginTop: 6 },

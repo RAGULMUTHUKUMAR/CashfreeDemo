@@ -21,10 +21,7 @@ class SqliteOrderRepository {
       )
     `);
     this.addColumn('payment_orders', 'cf_order_id TEXT');
-    this.addColumn(
-      'payment_orders',
-      "currency TEXT NOT NULL DEFAULT 'INR'",
-    );
+    this.addColumn('payment_orders', "currency TEXT NOT NULL DEFAULT 'INR'");
     this.addColumn('payment_orders', 'cashfree_order_status TEXT');
     this.addColumn('payment_orders', 'order_expiry_time TEXT');
     this.database.exec(`
@@ -35,16 +32,20 @@ class SqliteOrderRepository {
         state TEXT NOT NULL,
         cf_order_id TEXT,
         payment_session_id TEXT,
+        cashfree_response_json TEXT,
         cashfree_order_status TEXT,
         order_expiry_time TEXT,
         created_at TEXT NOT NULL
       )
     `);
+    this.addColumn('payment_order_requests', 'cashfree_response_json TEXT');
   }
 
   addColumn(tableName, definition) {
     const columnName = definition.split(' ')[0];
-    const columns = this.database.prepare(`PRAGMA table_info(${tableName})`).all();
+    const columns = this.database
+      .prepare(`PRAGMA table_info(${tableName})`)
+      .all();
     if (!columns.some(column => column.name === columnName)) {
       this.database.exec(`ALTER TABLE ${tableName} ADD COLUMN ${definition}`);
     }
@@ -59,9 +60,7 @@ class SqliteOrderRepository {
       )
       .run(idempotencyKey, requestHash, orderId, createdAt);
     const request = this.database
-      .prepare(
-        'SELECT * FROM payment_order_requests WHERE idempotency_key = ?',
-      )
+      .prepare('SELECT * FROM payment_order_requests WHERE idempotency_key = ?')
       .get(idempotencyKey);
 
     return {
@@ -77,7 +76,7 @@ class SqliteOrderRepository {
     };
   }
 
-  completeCreation(idempotencyKey, order, paymentSessionId) {
+  completeCreation(idempotencyKey, order, paymentSessionId, cashfreeResponse) {
     this.database.exec('BEGIN IMMEDIATE');
     try {
       this.database
@@ -100,13 +99,15 @@ class SqliteOrderRepository {
       const update = this.database
         .prepare(
           `UPDATE payment_order_requests
-           SET state = 'COMPLETED', cf_order_id = ?, payment_session_id = ?,
-               cashfree_order_status = ?, order_expiry_time = ?
+             SET state = 'COMPLETED', cf_order_id = ?, payment_session_id = ?,
+               cashfree_response_json = ?, cashfree_order_status = ?,
+               order_expiry_time = ?
            WHERE idempotency_key = ?`,
         )
         .run(
           order.cfOrderId || null,
           paymentSessionId,
+          JSON.stringify(cashfreeResponse),
           order.cashfreeOrderStatus || null,
           order.orderExpiryTime || null,
           idempotencyKey,
@@ -124,7 +125,8 @@ class SqliteOrderRepository {
   findCompletedCreation(idempotencyKey) {
     const row = this.database
       .prepare(
-        `SELECT request.order_id, request.payment_session_id, orders.*
+        `SELECT request.order_id, request.payment_session_id,
+          request.cashfree_response_json, orders.*
          FROM payment_order_requests AS request
          JOIN payment_orders AS orders ON orders.order_id = request.order_id
          WHERE request.idempotency_key = ? AND request.state = 'COMPLETED'`,
@@ -133,6 +135,14 @@ class SqliteOrderRepository {
 
     if (!row) {
       return undefined;
+    }
+    let cashfreeResponse;
+    try {
+      cashfreeResponse = row.cashfree_response_json
+        ? JSON.parse(row.cashfree_response_json)
+        : undefined;
+    } catch {
+      cashfreeResponse = undefined;
     }
     return {
       order: {
@@ -146,6 +156,7 @@ class SqliteOrderRepository {
         createdAt: row.created_at,
       },
       paymentSessionId: row.payment_session_id,
+      cashfreeResponse,
     };
   }
 
@@ -180,7 +191,12 @@ class SqliteOrderRepository {
              order_expiry_time = COALESCE(?, order_expiry_time)
          WHERE order_id = ?`,
       )
-      .run(status, cashfreeOrderStatus || null, orderExpiryTime || null, orderId);
+      .run(
+        status,
+        cashfreeOrderStatus || null,
+        orderExpiryTime || null,
+        orderId,
+      );
   }
 
   list(limit) {

@@ -41,12 +41,31 @@ class MockCashfree {
     }
     return {
       cf_order_id: `cf_${orderId}`,
+      created_at: '2026-10-28T12:00:00+05:30',
+      customer_details: {
+        customer_id: 'demo123',
+        customer_name: input.name,
+        customer_email: input.email,
+        customer_phone: '+919876543210',
+        customer_uid: 'customer-uid',
+      },
+      entity: 'order',
       order_id: orderId,
       order_amount: this.malformedAmount ? input.amount + 1 : input.amount,
-      order_currency: 'INR',
-      order_status: 'ACTIVE',
       payment_session_id: this.missingSession ? undefined : 'session_test_only',
-      created_at: '2026-10-28T12:00:00Z',
+      order_currency: 'INR',
+      order_expiry_time: '2026-10-29T12:00:00+05:30',
+      order_meta: {
+        return_url: `https://merchant.example/return?order_id=${orderId}`,
+        payment_methods: 'cc',
+        notify_url: 'https://merchant.example/notify',
+      },
+      order_note: 'Order created for payment',
+      order_splits: [],
+      order_status: 'ACTIVE',
+      order_tags: { product: 'meter recharge' },
+      terminal_data: null,
+      cart_details: { cart_id: 'cart-1' },
     };
   }
 
@@ -159,7 +178,10 @@ describe('Cashfree order request', () => {
     assert.equal(logLines.length, 2);
     assert.match(logLines[0], /"order_amount":125\.5/);
     assert.match(logLines[0], /"customer_email":"\[REDACTED\]"/);
-    assert.doesNotMatch(logLines[0], /customer@example\.com|\+919876543210|merchant\.example/);
+    assert.doesNotMatch(
+      logLines[0],
+      /customer@example\.com|\+919876543210|merchant\.example/,
+    );
     assert.match(logLines[1], /"cf_order_id":"cf_order_test"/);
     assert.match(logLines[1], /"payment_session_id":"\[REDACTED\]"/);
     assert.doesNotMatch(logLines[1], /session_test_only/);
@@ -205,7 +227,14 @@ describe('SQLite migration', () => {
       assert.equal(legacyOrder.amount, 25);
       assert.equal(legacyOrder.currency, 'INR');
       assert.equal(legacyOrder.status, 'PENDING');
-      assert.equal(repository.database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'payment_order_requests'").get().name, 'payment_order_requests');
+      assert.equal(
+        repository.database
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'payment_order_requests'",
+          )
+          .get().name,
+        'payment_order_requests',
+      );
     } finally {
       repository?.database.close();
       rmSync(directory, { recursive: true, force: true });
@@ -263,6 +292,18 @@ describe('payment API', () => {
     assert.match(response.body.orderId, /^cf_demo_[a-f0-9]{32}$/);
     assert.equal(response.body.paymentSessionId, 'session_test_only');
     assert.equal(response.body.status, 'PENDING');
+    assert.equal(response.body.cf_order_id, `cf_${response.body.orderId}`);
+    assert.equal(response.body.order_id, response.body.orderId);
+    assert.equal(response.body.order_amount, input.amount);
+    assert.equal(response.body.order_currency, 'INR');
+    assert.equal(response.body.order_status, 'ACTIVE');
+    assert.equal(response.body.payment_session_id, 'session_test_only');
+    assert.equal(response.body.entity, 'order');
+    assert.equal(response.body.customer_details.customer_uid, 'customer-uid');
+    assert.equal(response.body.order_meta.payment_methods, 'cc');
+    assert.deepEqual(response.body.order_splits, []);
+    assert.deepEqual(response.body.terminal_data, null);
+    assert.deepEqual(response.body.cart_details, { cart_id: 'cart-1' });
     assert.equal(repository.find(response.body.orderId).amount, input.amount);
     assert.equal(
       repository.find(response.body.orderId).cfOrderId,
@@ -288,6 +329,8 @@ describe('payment API', () => {
     assert.equal(replay.status, 201);
     assert.equal(replay.body.orderId, first.body.orderId);
     assert.equal(replay.body.paymentSessionId, first.body.paymentSessionId);
+    assert.equal(replay.body.cf_order_id, first.body.cf_order_id);
+    assert.equal(replay.body.order_status, first.body.order_status);
     assert.equal(conflict.status, 409);
     assert.equal(gateway.createCalls, 1);
     assert.equal(repository.list(50).length, 1);

@@ -16,7 +16,9 @@ class InvalidCashfreeResponseError extends Error {
 
 class IdempotencyConflictError extends Error {
   constructor() {
-    super('This idempotency key was already used for different payment details.');
+    super(
+      'This idempotency key was already used for different payment details.',
+    );
     this.name = 'IdempotencyConflictError';
   }
 }
@@ -50,7 +52,9 @@ function normalizePaymentStatus(payments) {
   if (statuses.some(status => !terminalStatuses.includes(status))) {
     return 'UNVERIFIABLE';
   }
-  if (statuses.every(status => ['USER_DROPPED', 'CANCELLED'].includes(status))) {
+  if (
+    statuses.every(status => ['USER_DROPPED', 'CANCELLED'].includes(status))
+  ) {
     return 'CANCELLED';
   }
   return 'FAILED';
@@ -61,9 +65,33 @@ function isOptionalString(value) {
 }
 
 function isOptionalObject(value) {
-  return (
-    value == null ||
-    (typeof value === 'object' && !Array.isArray(value))
+  return value == null || (typeof value === 'object' && !Array.isArray(value));
+}
+
+const CASHFREE_ORDER_RESPONSE_FIELDS = [
+  'cf_order_id',
+  'created_at',
+  'customer_details',
+  'entity',
+  'order_amount',
+  'payment_session_id',
+  'order_currency',
+  'order_expiry_time',
+  'order_id',
+  'order_meta',
+  'order_note',
+  'order_splits',
+  'order_status',
+  'order_tags',
+  'terminal_data',
+  'cart_details',
+];
+
+function selectCashfreeOrderResponse(response) {
+  return Object.fromEntries(
+    CASHFREE_ORDER_RESPONSE_FIELDS.filter(field =>
+      Object.prototype.hasOwnProperty.call(response, field),
+    ).map(field => [field, response[field]]),
   );
 }
 
@@ -137,7 +165,13 @@ class PaymentService {
       !isOptionalString(response.order_expiry_time) ||
       !isOptionalString(response.created_at) ||
       !isOptionalObject(response.customer_details) ||
-      !isOptionalObject(response.order_meta)
+      !isOptionalObject(response.order_meta) ||
+      !isOptionalString(response.order_note) ||
+      (response.order_splits != null &&
+        !Array.isArray(response.order_splits)) ||
+      !isOptionalObject(response.order_tags) ||
+      !isOptionalObject(response.terminal_data) ||
+      !isOptionalObject(response.cart_details)
     ) {
       throw new InvalidCashfreeResponseError();
     }
@@ -156,8 +190,13 @@ class PaymentService {
       idempotencyKey,
       order,
       response.payment_session_id,
+      selectCashfreeOrderResponse(response),
     );
-    return { order, paymentSessionId: response.payment_session_id };
+    return {
+      order,
+      paymentSessionId: response.payment_session_id,
+      cashfreeResponse: selectCashfreeOrderResponse(response),
+    };
   }
 
   async verifyOrder(orderId) {

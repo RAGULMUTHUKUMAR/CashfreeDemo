@@ -26,6 +26,20 @@ test('sends application fields with a stable idempotency key and reads session f
   mockAxiosRequest.mockResolvedValue({
     status: 201,
     data: {
+      cf_order_id: 'cf-provider-123',
+      order_id: 'cf_demo_0123456789abcdef0123456789abcdef',
+      entity: 'order',
+      order_amount: 499,
+      order_currency: 'INR',
+      order_status: 'ACTIVE',
+      payment_session_id: 'session_test_only',
+      customer_details: {
+        customer_id: 'demo123',
+        customer_name: customer.name,
+        customer_email: customer.email,
+        customer_phone: '+919876543210',
+      },
+      order_meta: { return_url: 'https://merchant.example/return' },
       orderId: 'cf_demo_0123456789abcdef0123456789abcdef',
       amount: 499,
       status: 'PENDING',
@@ -34,7 +48,10 @@ test('sends application fields with a stable idempotency key and reads session f
     },
   });
 
-  const result = await createOrder(customer, '56bb45db-a04c-4bc7-baa3-834a7ae18807');
+  const result = await createOrder(
+    customer,
+    '56bb45db-a04c-4bc7-baa3-834a7ae18807',
+  );
 
   expect(mockAxiosRequest).toHaveBeenCalledTimes(1);
   expect(mockAxiosRequest.mock.calls[0][0]).toMatchObject({
@@ -45,6 +62,13 @@ test('sends application fields with a stable idempotency key and reads session f
   });
   expect(result.paymentSessionId).toBe('session_test_only');
   expect(result.orderId).toBe('cf_demo_0123456789abcdef0123456789abcdef');
+  expect(result.cashfreeResponse).toMatchObject({
+    cf_order_id: 'cf-provider-123',
+    order_id: result.orderId,
+    order_amount: 499,
+    order_status: 'ACTIVE',
+    payment_session_id: 'session_test_only',
+  });
   expect(axios.create).toHaveBeenCalledWith(
     expect.objectContaining({ timeout: expect.any(Number) }),
   );
@@ -56,8 +80,9 @@ test('rejects an incomplete Cashfree payment session response', async () => {
     data: { orderId: 'cf_demo_0123456789abcdef0123456789abcdef' },
   });
 
-  await expect(createOrder(customer, '56bb45db-a04c-4bc7-baa3-834a7ae18807'))
-    .rejects.toThrow('incomplete payment session');
+  await expect(
+    createOrder(customer, '56bb45db-a04c-4bc7-baa3-834a7ae18807'),
+  ).rejects.toThrow('incomplete payment session');
 });
 
 test('logs safe diagnostics for a Cashfree authentication error', async () => {
